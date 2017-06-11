@@ -28,10 +28,12 @@ Command-line password manager using Keybase for cloud storage mechanism.
 You must be logged in to Keybase.
 
 Usage:
-  pw new [<category>] <name>
+  pw add [<category>] <name>
   pw edit <name>
   pw delete <name>
-  pw list [<category>]
+  pw list
+  pw list categories
+  pw list <category>
   pw show <name>
   pw copy <name> (u|p)
 
@@ -42,8 +44,9 @@ Options:
 
 #[derive(Debug, Deserialize)]
 struct Args {
-    cmd_new: bool,
+    cmd_add: bool,
     cmd_list: bool,
+    cmd_categories: bool,
     cmd_show: bool,
     cmd_copy: bool,
     cmd_edit: bool,
@@ -74,11 +77,15 @@ fn main() {
                             .unwrap_or_else(|e| e.exit());
     //println!("{:?}", args);
 
-    if args.cmd_new {
+    if args.cmd_add {
         new_credential(&conn, args.arg_category, args.arg_name);
     }
     else if args.cmd_list {
-        list_credentials(&conn, args.arg_category);
+        if args.cmd_categories {
+            list_categories(&conn);
+        } else {
+            list_credentials(&conn, args.arg_category)
+        }
     }
     else if args.cmd_show {
         show_credential(&conn, args.arg_name);
@@ -87,8 +94,7 @@ fn main() {
         copy_credential(&conn, args.arg_name, args.cmd_u);
     }
     else if args.cmd_edit {
-        // TODO: edit a given credential
-        println!("Edit not yet implemented");
+        edit_credential(&conn, args.arg_name);
     }
     else if args.cmd_delete {
         // TODO: delete a given credential
@@ -103,6 +109,10 @@ fn new_credential(conn: &rusqlite::Connection, category: Option<String>, name: S
         None => "".to_string()
     };
 
+    if category == "categories" {
+        println!("You cannot use the category 'categories'.");
+        return;
+    }
     if name_exists(conn, &name) {
         println!("A credential with this name already exists.");
         return;
@@ -127,26 +137,39 @@ fn new_credential(conn: &rusqlite::Connection, category: Option<String>, name: S
     println!("Saved.");
 }
 
+fn list_categories(conn: &rusqlite::Connection) {
+    let mut statement = conn.prepare("SELECT DISTINCT(category) FROM credentials").unwrap();
+    let mut rows = statement.query(&[]).unwrap();
+    println!("Categories:");
+    while let Some(result_row) = rows.next() {
+        let row = result_row.unwrap();
+        let category: String = row.get(0);
+        println!("    {}", category);
+    }
+}
+
 fn list_credentials(conn: &rusqlite::Connection, category: Option<String>) {
     // TODO: how do we differentiate yes/no category in a non-stupid way?
+    // lifetimes means `statement` must not go out of scope before `rows`
     let mut statement = match category.to_owned() {
-        Some(c) => conn.prepare("SELECT category, name FROM credentials WHERE category = ?1 ORDER BY category,name").unwrap(),
-        None => conn.prepare("SELECT category, name FROM credentials ORDER BY category,name").unwrap()
+        None => conn.prepare("SELECT category, name FROM credentials ORDER BY category,name").unwrap(),
+        _ => conn.prepare("SELECT category, name FROM credentials WHERE category = ?1 ORDER BY category,name").unwrap()
     };
     let mut rows = match category.to_owned() {
-        Some(c) => statement.query(&[&category]).unwrap(),
-        None => statement.query(&[]).unwrap()
+        None => statement.query(&[]).unwrap(),
+        _ => statement.query(&[&category]).unwrap()
     };
 
     // TODO: how do we do this in a non-stupid way?
-    let mut previousCategory = "".to_string();
+    let mut previous_category = "".to_string();
     while let Some(result_row) = rows.next() {
         let row = result_row.unwrap();
         let category: String = row.get(0);
         let name: String = row.get(1);
-        if previousCategory != category {
-            println!("\nCategory: {}", category);
-            previousCategory = category;
+        if previous_category != category {
+
+            println!("Category: {}", category);
+            previous_category = category;
         }
         println!("    {}", name);
     }
@@ -173,13 +196,38 @@ fn copy_credential(conn: &rusqlite::Connection, name: String, username: bool) {
     let credential = get_credential(conn, name);
     let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
     if username {
-        ctx.set_contents(credential.username);
+        ctx.set_contents(credential.username).expect("Unable to write to clipboard.");
         println!("{} username copied to clipboard.", credential.name);
     } else {
-        ctx.set_contents(credential.password);
+        ctx.set_contents(credential.password).expect("Unable to write to clipboard.");
         println!("{} password copied to clipboard.", credential.name);
     }
     pause("(press enter to clear)");
+}
+
+fn edit_credential(conn: &rusqlite::Connection, name: String) {
+    let credential = get_credential(conn, name);
+
+    let mut rl = Editor::<()>::new();
+    let name: String = match rl.readline(&format!("Name [{}]: ", credential.name)) {
+        Ok(v) => if v == "" {credential.name} else {v},
+        _ => credential.name
+    };
+    let category: String = match rl.readline(&format!("Category [{}]: ", credential.category)) {
+        Ok(v) => if v == "" {credential.category} else {v},
+        _ => credential.category
+    };
+    let username: String = match rl.readline(&format!("Username [{}]: ", credential.username)) {
+        Ok(v) => if v == "" {credential.username} else {v},
+        _ => credential.username
+    };
+    let password: String = match rl.readline(&format!("Password [{}]: ", credential.password)) {
+        Ok(v) => if v == "" {credential.password} else {v},
+        _ => credential.password
+    };
+    conn.execute("UPDATE credentials SET name=?1, category=?2, username=?3, password=?4 where id=?5",
+        &[&name, &category, &username, &password, &credential.id]).expect("Unable to edit credential.");
+    println!("Credential edited.");
 }
 
 fn initialize_datastore() -> rusqlite::Connection {
