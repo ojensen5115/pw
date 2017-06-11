@@ -97,8 +97,7 @@ fn main() {
         edit_credential(&conn, args.arg_name);
     }
     else if args.cmd_delete {
-        // TODO: delete a given credential
-        println!("Delete not yet implemented");
+        delete_credential(&conn, args.arg_name);
     }
 
 }
@@ -228,6 +227,25 @@ fn edit_credential(conn: &rusqlite::Connection, name: String) {
     conn.execute("UPDATE credentials SET name=?1, category=?2, username=?3, password=?4 where id=?5",
         &[&name, &category, &username, &password, &credential.id]).expect("Unable to edit credential.");
     println!("Credential edited.");
+}
+
+fn delete_credential(conn: &rusqlite::Connection, name: String) {
+    let credential = get_credential(conn, name);
+    println!("Name: {}\nCategory: {}\nUsername: {}\n", credential.name, credential.category, credential.username);
+
+    println!("Are you sure you wish to delete this credential?");
+    let mut rl = Editor::<()>::new();
+    match rl.readline(&format!("y/n [n]: ")) {
+        Ok(v) => {
+            if v == "y" {
+                conn.execute("DELETE FROM  credentials WHERE id=?1", &[&credential.id]).expect("Unable to delete credential.");
+                println!("Credential deleted.");
+            } else {
+                println!("Canceled.");
+            }
+        },
+        _ => println!("Canceled.")
+    };
 }
 
 fn initialize_datastore() -> rusqlite::Connection {
