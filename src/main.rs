@@ -1,8 +1,14 @@
+extern crate ini;
+use ini::Ini;
+
 // Consider replacing docopt with clap
 extern crate docopt;
 use docopt::Docopt;
 #[macro_use]
 extern crate serde_derive;
+
+extern crate serde_json;
+use serde_json::Value;
 
 extern crate rusqlite;
 use rusqlite::Connection;
@@ -14,14 +20,16 @@ extern crate clipboard;
 use clipboard::ClipboardProvider;
 use clipboard::ClipboardContext;
 
-use std::path::Path;
+use std::env;
+
+use std::path::{PathBuf, Path};
 
 use std::io;
 use std::io::prelude::*;
 
-// TODO: check for keybase
-// TODO: user agnostic path
-const DATA_PATH: &'static str = "/keybase/private/ojensen/pw.dat";
+use std::process::Command;
+
+const INI_PATH: &'static str = ".pwrc";
 
 const USAGE: &'static str = "
 Command-line password manager using Keybase for cloud storage mechanism.
@@ -70,7 +78,9 @@ struct Credential {
 
 fn main() {
 
-    let conn = initialize_datastore();
+    let config = parse_config_file();
+    let path = config.section(None::<String>).unwrap().get("datastore_path").unwrap();
+    let conn = initialize_datastore(path);
 
     let args: Args = Docopt::new(USAGE)
                             .and_then(|d| d.deserialize())
@@ -248,9 +258,10 @@ fn delete_credential(conn: &rusqlite::Connection, name: String) {
     };
 }
 
-fn initialize_datastore() -> rusqlite::Connection {
-    let db_exists = Path::new(DATA_PATH).is_file();
-    let conn = Connection::open(DATA_PATH).unwrap();
+fn initialize_datastore(data_path: &str) -> rusqlite::Connection {
+    let path = Path::new(data_path);
+    let db_exists = path.is_file();
+    let conn = Connection::open(path).unwrap();
     if !db_exists {
         conn.execute("CREATE TABLE credentials (
                       id              INTEGER PRIMARY KEY,
@@ -282,4 +293,53 @@ fn pause(message: &str) {
     stdout.flush().unwrap();
 
     let _ = stdin.read(&mut [0u8]).unwrap();
+}
+
+fn get_datastore_path() -> PathBuf {
+    // note: querying keybase takes about 100 ms
+    let keybase_query = Command::new("keybase")
+        .arg("status")
+        .arg("-j")
+        .output()
+        .expect("Unable to query Keybase -- is it installed?");
+    if !keybase_query.status.success() {
+        panic!("Keybase did not execute successfully.");
+    }
+    let data: Value = serde_json::from_slice(&keybase_query.stdout).expect("Unable to process Keybase output.");
+    if data["LoggedIn"] != Value::Bool(true) {
+        panic!("You are not logged in to Keybase.");
+    }
+    if data["KBFS"]["Running"] != Value::Bool(true) {
+        panic!("You do not have KBFS enabled.");
+    }
+    match data["Username"] {
+        Value::String(ref v) => {
+            let mut data_path = PathBuf::from("/keybase/private/");
+            data_path.push(v);
+            data_path.push("pw.dat");
+            data_path
+        },
+        _ => panic!("Unable to determine Keybase username.")
+    }
+}
+
+fn parse_config_file() -> Ini {
+    let mut config_path = env::home_dir().expect("Could not find your home directory.");
+    config_path.push(INI_PATH);
+    let config_path_str = config_path.to_str().unwrap();
+
+    if let Ok(ini) = Ini::load_from_file(config_path_str) {
+        if let Some(_) = ini.to_owned().section(None::<String>).unwrap().get("datastore_path") {
+            return ini;
+        }
+    }
+    return create_default_config(config_path_str);
+}
+
+fn create_default_config(path_to_write: &str) -> Ini {
+    let datastore_path = get_datastore_path();
+    let mut conf = Ini::new();
+    conf.with_section(None::<String>).set("datastore_path", datastore_path.to_str().unwrap());
+    conf.write_to_file(path_to_write).expect("Unable to write config file");
+    conf
 }
