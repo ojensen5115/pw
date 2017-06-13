@@ -167,4 +167,6 @@ This is roughly equivalent to having a `passwords.txt` file on your desktop: you
 - I'm clearly not using Docopt quite correctly:
   it isn't properly displaying the summary or the options.
   Should be an easy fix once I sort out what I'm doing wrong.
+- Once a category on a credential is set, you can no longer set it back to the empty string:
+  when editing, leaving a field blank retains its old value.
 - Code style likely isn't very good -- comments and pointers much appreciated!
