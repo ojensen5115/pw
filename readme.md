@@ -3,15 +3,6 @@
 `pw` is a command-line password manager written in Rust, using the Keybase Filesystem for storage.
 This means that in order to use it, you will need a Keybase account, and will need to have `/keybase` mounted on your filesystem.
 
-On its initial run, it'll query keybase to determine the path to your private keybase directory,
-    and will store your passwords in `/keybase/private/[you]/pw.dat`.
-Since querying keybase is relatively slow, on its first run it'll write the path to `pw.dat` to a config file, `~/.pwrc`, and just use that path subsequently.
-If you would like your passwords stored somewhere else (e.g. `/keybase/private/[you]/.pw/data` or even `/keybase/private/[you],[other]/pw.dat`),
-    simply edit `~/.pwrc` after your first run and point it to wherever you like.
-
-Note that if you replace the datastore path with a non-keybase path, `pw` will happily continue along using a non-encrypted datastore.
-This is roughly equivalent to having a `passwords.txt` file on your desktop: you probably don't want to do this.
-
 ## Usage
 
 ### `pw add [<category>] <name>`
@@ -151,6 +142,18 @@ git clone git@github.com:ojensen5115/pw.git    # Clone the repo
 cd pw                                          # Enter the directory
 cargo install                                  # Copy the binary to your local path
 ```
+
+## Data Storage
+
+On its initial run, `pw` will query keybase to determine the path to your private keybase directory,
+    and will store your passwords in `/keybase/private/[you]/pw.dat`.
+Since querying keybase is relatively slow, `pw` will write the path to `pw.dat` to a config file, `~/.pwrc`.
+Subsequent runs will simply use that path subsequently in the config file.
+
+If you would like your passwords stored somewhere else (e.g. `/keybase/private/[you]/.pw/data` or even `/keybase/private/[you],[other]/pw.dat`),
+    simply edit `~/.pwrc` after your first run and point it to wherever you like.
+Note that if you replace the datastore path with a non-keybase path, `pw` will happily continue along using a non-encrypted datastore.
+This is roughly equivalent to having a `passwords.txt` file on your desktop: you probably don't want to do this.
 
 ## TODO
 
