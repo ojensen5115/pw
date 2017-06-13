@@ -89,7 +89,7 @@ Category: web
 ### `pw list categories`
 
 Displays a list of categories.
-Note that due to its use as a keyword here, credentials cannot be saved into a category called "category".
+Note that due to its use as a keyword here, credentials cannot be saved into a category called "categories".
 
 ```
 $ pw list categories
