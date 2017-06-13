@@ -88,8 +88,8 @@ Note that due to its use as a keyword here, credentials cannot be saved into a c
 ```
 $ pw list categories
 Categories:
-    social
     shopping
+    social
     travel
     web
 $

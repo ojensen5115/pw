@@ -147,7 +147,7 @@ fn new_credential(conn: &rusqlite::Connection, category: Option<String>, name: S
 }
 
 fn list_categories(conn: &rusqlite::Connection) {
-    let mut statement = conn.prepare("SELECT DISTINCT(category) FROM credentials").unwrap();
+    let mut statement = conn.prepare("SELECT DISTINCT(category) FROM credentials ORDER BY category").unwrap();
     let mut rows = statement.query(&[]).unwrap();
     println!("Categories:");
     while let Some(result_row) = rows.next() {
