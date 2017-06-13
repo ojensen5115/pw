@@ -26,6 +26,7 @@ Creating new credentials named "facebook.com" in category "social"
 Username: my@email.com
 Password: mYf4ceb00kPass!
 Saved.
+$
 ```
 
 ### `pw edit <name>`
@@ -59,6 +60,7 @@ Username: my@email.com
 Are you sure you wish to delete this credential?
 y/n [n]: y
 Credential deleted.
+$
 ```
 
 ### `pw list`
@@ -84,6 +86,7 @@ Category: web
     digitalocean.com
     linode.com
     members.nearlyfreespeech.net
+$
 ```
 
 ### `pw list categories`
@@ -98,6 +101,7 @@ Categories:
     shopping
     travel
     web
+$
 ```
 
 ### `pw list <category>`
@@ -112,6 +116,7 @@ Category: social
     news.ycombinator.com
     reddit.com
     twitter.com
+$
 ````
 
 ### `pw show <name>`
@@ -123,6 +128,7 @@ $ pw show facebook.com
 facebook.com:
     my@email
     n3wp4ss41~
+$
 ```
 
 ### `pw copy <name> (u|p)`
