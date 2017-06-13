@@ -147,8 +147,8 @@ cargo install                                  # Copy the binary to your local p
 
 On its initial run, `pw` will query keybase to determine the path to your private keybase directory,
     and will store your passwords in `/keybase/private/[you]/pw.dat`.
-Since querying keybase is relatively slow, `pw` will write the path to `pw.dat` to a config file, `~/.pwrc`.
-Subsequent runs will simply use that path subsequently in the config file.
+Since querying keybase is relatively slow, `pw` will write the datastore path to a config file, `~/.pwrc`.
+Subsequent runs will simply use the path in the config file.
 
 If you would like your passwords stored somewhere else (e.g. `/keybase/private/[you]/.pw/data` or even `/keybase/private/[you],[other]/pw.dat`),
     simply edit `~/.pwrc` after your first run and point it to wherever you like.
