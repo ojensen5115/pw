@@ -157,6 +157,7 @@ This is roughly equivalent to having a `passwords.txt` file on your desktop: you
 
 ## TODO
 
+- tab completion, for the commands, and ideally also for the credential names if I can figure out how to do that.
 - lock the password file (e.g. `pw lock` / `pw unlock`)
 - consider moving away from bundled sqlite --
   unless you have thousands of passwords,
