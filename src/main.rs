@@ -44,6 +44,7 @@ Usage:
   pw list <category>
   pw show <name>
   pw copy <name> (u|p)
+  pw [options]
 
 Options:
   -h --help     Show this screen.
