@@ -17,7 +17,7 @@ _pw()
             return 0
             ;;
         add|list)
-            COMPREPLY=( $(compgen -W "sections `pw --comp-sec`" -- ${cur}) )
+            COMPREPLY=( $(compgen -W "categories `pw --comp-sec`" -- ${cur}) )
             return 0
             ;;
         *)
