@@ -44,11 +44,14 @@ Usage:
   pw list <category>
   pw show <name>
   pw copy <name> (u|p)
+  pw (lock | unlock)
   pw [options]
 
 Options:
   -h --help     Show this screen.
   --version     Show version.
+  --comp-name   List credential names for tab completion
+  --comp-sec    List categories for tab completion
 ";
 
 #[derive(Debug, Deserialize)]
@@ -63,6 +66,12 @@ struct Args {
 
     cmd_u: bool,
     cmd_p: bool,
+
+    cmd_lock: bool,
+    cmd_unlock: bool,
+
+    flag_comp_name: bool,
+    flag_comp_sec: bool,
 
     arg_name: String,
     arg_category: Option<String>
@@ -110,6 +119,18 @@ fn main() {
     else if args.cmd_delete {
         delete_credential(&conn, args.arg_name);
     }
+    else if args.cmd_lock {
+        println!("Not yet implemented");
+    }
+    else if args.cmd_unlock {
+        println!("Not yet implemented");
+    }
+    else if args.flag_comp_name {
+        completion_name(&conn);
+    }
+    else if args.flag_comp_sec {
+        completion_sec(&conn);
+    }
 
 }
 
@@ -118,6 +139,9 @@ fn new_credential(conn: &rusqlite::Connection, category: Option<String>, name: S
         Some(c) => c,
         None => "".to_string()
     };
+    // To make tab completion reasonable, we replace spaces with underscores in name and category
+    let name = name.replace(" ", "_");
+    let category = category.replace(" ", "_");
 
     if category == "categories" {
         println!("You cannot use the category 'categories'.");
@@ -182,6 +206,24 @@ fn list_credentials(conn: &rusqlite::Connection, category: Option<String>) {
             previous_category = category;
         }
         println!("    {}", name);
+    }
+}
+
+fn completion_name(conn: &rusqlite::Connection) {
+    let mut statement = conn.prepare("SELECT name FROM credentials").unwrap();
+    let mut rows = statement.query(&[]).unwrap();
+    while let Some(result_row) = rows.next() {
+        let entry: String = result_row.unwrap().get(0);
+        print!("{} ", entry);
+    }
+}
+
+fn completion_sec(conn: &rusqlite::Connection) {
+    let mut statement = conn.prepare("SELECT distinct(category) FROM credentials").unwrap();
+    let mut rows = statement.query(&[]).unwrap();
+    while let Some(result_row) = rows.next() {
+        let entry: String = result_row.unwrap().get(0);
+        print!("{} ", entry);
     }
 }
 

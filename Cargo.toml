@@ -1,6 +1,6 @@
 [package]
 name = "pw"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Oliver Jensen <ojensen5115@gmail.com>"]
 
 [dependencies.rusqlite]

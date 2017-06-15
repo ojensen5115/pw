@@ -1,0 +1,28 @@
+_pw()
+{
+    local cur prev
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    commands="add edit delete list show copy lock unlock"
+
+    case "$prev" in
+        pw)
+            COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
+            return 0
+            ;;
+        edit|delete|show|copy)
+            COMPREPLY=( $(compgen -W "`pw --comp-name`" -- ${cur}) )
+            return 0
+            ;;
+        add|list)
+            COMPREPLY=( $(compgen -W "sections `pw --comp-sec`" -- ${cur}) )
+            return 0
+            ;;
+        *)
+        ;;
+    esac
+
+}
+complete -F _pw pw

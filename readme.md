@@ -141,6 +141,8 @@ Make sure you have rust / cargo / etc. installed. Then:
 git clone git@github.com:ojensen5115/pw.git    # Clone the repo
 cd pw                                          # Enter the directory
 cargo install                                  # Copy the binary to your local path
+cat bash_completion >> ~/.bash_completion      # Set up bash completion
+source ~/.bash_completion                      # Get bash completion going in this shell
 ```
 
 ## Data Storage
