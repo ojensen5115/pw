@@ -44,7 +44,6 @@ Usage:
   pw list <category>
   pw show <name>
   pw copy <name> (u|p)
-  pw (lock | unlock)
   pw [options]
 
 Options:
@@ -66,9 +65,6 @@ struct Args {
 
     cmd_u: bool,
     cmd_p: bool,
-
-    cmd_lock: bool,
-    cmd_unlock: bool,
 
     flag_comp_name: bool,
     flag_comp_sec: bool,
@@ -118,12 +114,6 @@ fn main() {
     }
     else if args.cmd_delete {
         delete_credential(&conn, args.arg_name);
-    }
-    else if args.cmd_lock {
-        println!("Not yet implemented");
-    }
-    else if args.cmd_unlock {
-        println!("Not yet implemented");
     }
     else if args.flag_comp_name {
         completion_name(&conn);
