@@ -159,6 +159,7 @@ This is roughly equivalent to having a `passwords.txt` file on your desktop: you
 
 ## TODO
 
+- have password generation prompt to save it as a new credential or edit an existing one.
 - consider moving away from bundled sqlite --
   unless you have thousands of passwords,
   it's probably more efficient to just grep a flat textfile than do queries on indexes.
