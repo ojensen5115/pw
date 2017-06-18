@@ -134,6 +134,17 @@ facebook.com password copied to clipboard.
 $
 ```
 
+### `pw generate [--alpha] [--num] [--symbol] [<numchars>]`
+
+Generates a secure random password. Defaults to 32 characters and the full character set.
+
+```
+$ pw generate --alpha --num 16
+Generating 16-character alphanumeric password:
+    xs7o6X5NQhw2BXA
+$
+```
+
 ## Installation
 
 Make sure you have rust / cargo / etc. installed. Then:

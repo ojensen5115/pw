@@ -37,6 +37,7 @@ Command-line password manager using Keybase for cloud storage mechanism.
 You must be logged in to Keybase.
 
 Usage:
+  pw -h | --help | --version
   pw add [<category>] <name>
   pw edit <name>
   pw delete <name>
@@ -45,15 +46,16 @@ Usage:
   pw list <category>
   pw show <name>
   pw copy <name> (u|p)
-  pw generate [--chars=<num>]
-  pw -h | --help | --version
+  pw generate [--alpha] [--num] [--symbol] [<numchars>]
   pw --comp-name | --comp-sec
 
 
 Options:
   -h --help      Show this screen.
   --version      Show version.
-  --chars=<num>  Number of characters to generate [default: 32]
+  -a --alpha     Use upper and lowercase letters for password generation.
+  -1 --num       Use numbers for password generation.
+  -s --symbol    Use symbols for password generation.
   --comp-name    List credential names for tab completion
   --comp-sec     List categories for tab completion
 
@@ -77,12 +79,15 @@ struct Args {
     cmd_u: bool,
     cmd_p: bool,
 
+    flag_alpha: bool,
+    flag_num: bool,
+    flag_symbol: bool,
     flag_comp_name: bool,
     flag_comp_sec: bool,
-    flag_chars: usize,
 
     arg_name: String,
-    arg_category: Option<String>
+    arg_category: Option<String>,
+    arg_numchars: usize
 }
 
 #[derive(Debug)]
@@ -128,7 +133,7 @@ fn main() {
         delete_credential(&conn, args.arg_name);
     }
     else if args.cmd_generate {
-        generate_password(args.flag_chars);
+        generate_password(args.arg_numchars, args.flag_alpha, args.flag_num, args.flag_symbol);
     }
     else if args.flag_comp_name {
         completion_name(&conn);
@@ -306,15 +311,37 @@ fn delete_credential(conn: &rusqlite::Connection, name: String) {
     };
 }
 
-fn generate_password(num_chars: usize) {
+fn generate_password(num_chars: usize, alpha: bool, num: bool, symbol: bool) {
+    // construct character set, default to all
+    let mut haystack = String::new();
+    let mut haystack_name = String::new();
+    let all = !alpha && !num && !symbol;
+    if alpha || all {
+        haystack += CHAR_ALPHA;
+        haystack_name += "alpha";
+    }
+    if num || all {
+        haystack += CHAR_NUM;
+        haystack_name += "numeric";
+    }
+    if symbol || all {
+        haystack += CHAR_SYMBOL;
+        haystack_name += "symbol";
+    }
+    let haystack_name = if all { String::new() } else { haystack_name + " " };
+
+    // default 32 characters
+    let num_chars = match num_chars {
+        0 => 32,
+        x => x
+    };
+
+    println!("Generating {}-character {}password:", num_chars, haystack_name);
+
     let mut rand = match OsRng::new() {
         Ok(g) => g,
         Err(e) => panic!("Failed to obtain OS RNG: {}", e)
     };
-    println!("Generating {}-character password:", num_chars);
-
-    //let password = rand.gen_ascii_chars().take(num_chars).collect::<String>();
-    let haystack = CHAR_ALPHA.to_owned() + CHAR_NUM + CHAR_SYMBOL;
     let mut pw = Vec::new();
     for _ in 1..num_chars {
         pw.push(*rand.choose(haystack.as_bytes()).unwrap());
