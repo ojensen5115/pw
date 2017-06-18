@@ -134,12 +134,12 @@ facebook.com password copied to clipboard.
 $
 ```
 
-### `pw generate [--alpha] [--num] [--symbol] [<numchars>]`
+### `pw generate [--alpha|-a] [--num|-1] [--symbol|-s] [<numchars>]`
 
 Generates a secure random password. Defaults to 32 characters and the full character set.
 
 ```
-$ pw generate --alpha --num 16
+$ pw generate -a1 16
 Generating 16-character alphanumeric password:
     xs7o6X5NQhw2BXA
 $
