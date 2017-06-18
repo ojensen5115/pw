@@ -6,6 +6,7 @@ _pw()
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     commands="add edit delete list show copy generate"
+    genopts="--alpha --num --symbol"
 
     case "$prev" in
         pw)
@@ -18,6 +19,10 @@ _pw()
             ;;
         add|list)
             COMPREPLY=( $(compgen -W "categories `pw --comp-sec`" -- ${cur}) )
+            return 0
+            ;;
+        generate)
+            COMPREPLY=( $(compgen -W "${genopts}" -- ${cur}) )
             return 0
             ;;
         *)
