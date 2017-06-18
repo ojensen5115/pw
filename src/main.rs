@@ -20,13 +20,14 @@ extern crate clipboard;
 use clipboard::ClipboardProvider;
 use clipboard::ClipboardContext;
 
+extern crate rand;
+use rand::Rng;
+use rand::os::OsRng;
+
 use std::env;
-
-use std::path::{PathBuf, Path};
-
 use std::io;
 use std::io::prelude::*;
-
+use std::path::{PathBuf, Path};
 use std::process::Command;
 
 const INI_PATH: &'static str = ".pwrc";
@@ -44,14 +45,23 @@ Usage:
   pw list <category>
   pw show <name>
   pw copy <name> (u|p)
-  pw [options]
+  pw generate [--chars=<num>]
+  pw -h | --help | --version
+  pw --comp-name | --comp-sec
+
 
 Options:
-  -h --help     Show this screen.
-  --version     Show version.
-  --comp-name   List credential names for tab completion
-  --comp-sec    List categories for tab completion
+  -h --help      Show this screen.
+  --version      Show version.
+  --chars=<num>  Number of characters to generate [default: 32]
+  --comp-name    List credential names for tab completion
+  --comp-sec     List categories for tab completion
+
 ";
+
+const CHAR_ALPHA: &'static str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const CHAR_NUM: &'static str = "1234567890";
+const CHAR_SYMBOL: &'static str = "!@#$%^&*()";
 
 #[derive(Debug, Deserialize)]
 struct Args {
@@ -62,12 +72,14 @@ struct Args {
     cmd_copy: bool,
     cmd_edit: bool,
     cmd_delete: bool,
+    cmd_generate: bool,
 
     cmd_u: bool,
     cmd_p: bool,
 
     flag_comp_name: bool,
     flag_comp_sec: bool,
+    flag_chars: usize,
 
     arg_name: String,
     arg_category: Option<String>
@@ -114,6 +126,9 @@ fn main() {
     }
     else if args.cmd_delete {
         delete_credential(&conn, args.arg_name);
+    }
+    else if args.cmd_generate {
+        generate_password(args.flag_chars);
     }
     else if args.flag_comp_name {
         completion_name(&conn);
@@ -289,6 +304,24 @@ fn delete_credential(conn: &rusqlite::Connection, name: String) {
         },
         _ => println!("Canceled.")
     };
+}
+
+fn generate_password(num_chars: usize) {
+    let mut rand = match OsRng::new() {
+        Ok(g) => g,
+        Err(e) => panic!("Failed to obtain OS RNG: {}", e)
+    };
+    println!("Generating {}-character password:", num_chars);
+
+    //let password = rand.gen_ascii_chars().take(num_chars).collect::<String>();
+    let haystack = CHAR_ALPHA.to_owned() + CHAR_NUM + CHAR_SYMBOL;
+    let mut pw = Vec::new();
+    for _ in 1..num_chars {
+        pw.push(*rand.choose(haystack.as_bytes()).unwrap());
+    }
+    let password = String::from_utf8(pw).unwrap();
+
+    println!("    {}", password);
 }
 
 fn initialize_datastore(data_path: &str) -> rusqlite::Connection {

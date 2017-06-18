@@ -5,7 +5,7 @@ _pw()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    commands="add edit delete list show copy"
+    commands="add edit delete list show copy generate"
 
     case "$prev" in
         pw)
