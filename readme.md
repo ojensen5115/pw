@@ -136,7 +136,12 @@ $
 
 ### `pw generate [--alpha|-a] [--num|-1] [--symbol|-s] [<numchars>]`
 
-Generates a secure random password. Defaults to 32 characters and the full character set.
+Generates a random password using your operating system's secure random number generator.
+Defaults to 32 characters and the full character set.
+
+- alpha: `abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`
+- num: `1234567890`
+- symbol: `!@#$%^&*()`
 
 ```
 $ pw generate -a1 16

@@ -61,8 +61,8 @@ Options:
 
 ";
 
-const CHAR_ALPHA: &'static str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const CHAR_NUM: &'static str = "1234567890";
+const CHAR_ALPHA:  &'static str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const CHAR_NUM:    &'static str = "1234567890";
 const CHAR_SYMBOL: &'static str = "!@#$%^&*()";
 
 #[derive(Debug, Deserialize)]
