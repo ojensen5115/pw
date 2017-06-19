@@ -146,7 +146,13 @@ Defaults to 32 characters and the full character set.
 ```
 $ pw generate -a1 16
 Generating 16-character alphanumeric password:
-    xs7o6X5NQhw2BXA
+    eMRlPYFp9uiSIxW
+
+Password copied to clipboard.
+[A]dd new or [e]dit existing credential? e
+Credential name to update: facebook.com
+Overwrite password for facebook.com, (my@email.com)? y/n [n]: y
+Password updated for facebook.com.
 $
 ```
 
