@@ -242,7 +242,7 @@ fn show_credential(conn: &rusqlite::Connection, name: String) {
 }
 
 fn get_credential(conn: &rusqlite::Connection, name: String) -> Credential {
-    conn.query_row("SELECT * FROM credentials WHERE name = ?1", &[&name], |row| {
+    match conn.query_row("SELECT * FROM credentials WHERE name = ?1", &[&name], |row| {
         Credential {
             id: row.get(0),
             name: row.get(1),
@@ -250,7 +250,13 @@ fn get_credential(conn: &rusqlite::Connection, name: String) -> Credential {
             username: row.get(3),
             password: row.get(4)
         }
-    }).expect("No such credential saved.")
+    }) {
+        Ok(c) => c,
+        _ => {
+            println!("No such credential saved.");
+            ::std::process::exit(1)
+        }
+    }
 }
 
 fn copy_credential(conn: &rusqlite::Connection, name: String, username: bool) {
