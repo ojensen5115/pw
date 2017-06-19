@@ -37,7 +37,7 @@ Command-line password manager using Keybase for cloud storage mechanism.
 You must be logged in to Keybase.
 
 Usage:
-  pw -h | --help | --version
+  pw -h | --help
   pw add [<category>] <name>
   pw edit <name>
   pw delete <name>
@@ -52,7 +52,6 @@ Usage:
 
 Options:
   -h --help      Show this screen.
-  --version      Show version.
   -a --alpha     Use upper and lowercase letters for password generation.
   -1 --num       Use numbers for password generation.
   -s --symbol    Use symbols for password generation.
@@ -133,7 +132,7 @@ fn main() {
         delete_credential(&conn, args.arg_name);
     }
     else if args.cmd_generate {
-        generate_password(args.arg_numchars, args.flag_alpha, args.flag_num, args.flag_symbol);
+        generate_password(&conn, args.arg_numchars, args.flag_alpha, args.flag_num, args.flag_symbol);
     }
     else if args.flag_comp_name {
         completion_name(&conn);
@@ -168,15 +167,15 @@ fn new_credential(conn: &rusqlite::Connection, category: Option<String>, name: S
     }
     println!("");
 
-    let mut rl = Editor::<()>::new();
-    let username = rl.readline("Username: ").expect("No username supplied.");
-    let password = rl.readline("Password: ").expect("No password supplied.");
-    conn.execute("INSERT INTO credentials
-        (name, category, username, password)
-        values
-        (?1, ?2, ?3, ?4)",
-        &[&name, &category, &username, &password]
-    ).unwrap();
+    let mut cred = Credential {
+        id: 0,
+        name: name,
+        category: category,
+        username: "".to_owned(),
+        password: "".to_owned()
+    };
+    modify_credential_data(&mut cred, true);
+    do_new_credential(conn, &cred);
 
     println!("Saved.");
 }
@@ -256,52 +255,85 @@ fn get_credential(conn: &rusqlite::Connection, name: String) -> Credential {
 
 fn copy_credential(conn: &rusqlite::Connection, name: String, username: bool) {
     let credential = get_credential(conn, name);
-    let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
     if username {
-        ctx.set_contents(credential.username).expect("Unable to write to clipboard.");
+        copy_to_clipboard(credential.username);
         println!("{} username copied to clipboard.", credential.name);
     } else {
-        ctx.set_contents(credential.password).expect("Unable to write to clipboard.");
+        copy_to_clipboard(credential.password);
         println!("{} password copied to clipboard.", credential.name);
     }
     pause("(press enter to clear)");
 }
 
 fn edit_credential(conn: &rusqlite::Connection, name: String) {
-    let credential = get_credential(conn, name);
-
-    let mut rl = Editor::<()>::new();
-    let name: String = match rl.readline(&format!("Name [{}]: ", credential.name)) {
-        Ok(v) => if v == "" {credential.name} else {v},
-        _ => credential.name
-    };
-    let category: String = match rl.readline(&format!("Category [{}]: ", credential.category)) {
-        Ok(v) => if v == "" {credential.category} else {v},
-        _ => credential.category
-    };
-    let username: String = match rl.readline(&format!("Username [{}]: ", credential.username)) {
-        Ok(v) => if v == "" {credential.username} else {v},
-        _ => credential.username
-    };
-    let password: String = match rl.readline(&format!("Password [{}]: ", credential.password)) {
-        Ok(v) => if v == "" {credential.password} else {v},
-        _ => credential.password
-    };
-    conn.execute("UPDATE credentials SET name=?1, category=?2, username=?3, password=?4 where id=?5",
-        &[&name, &category, &username, &password, &credential.id]).expect("Unable to edit credential.");
+    let mut credential = get_credential(conn, name);
+    modify_credential_data(&mut credential, false);
+    do_edit_credential(conn, &credential);
     println!("Credential edited.");
 }
 
+fn modify_credential_data(cred: &mut Credential, skip_name_and_category: bool) {
+    let mut rl = Editor::<()>::new();
+    if !skip_name_and_category {
+        let name = rl.readline(match cred.name.as_ref() {
+            "" => "Name: ".to_owned(),
+            x => format!("Name [{}]: ", x)
+        }.as_ref()).unwrap();
+        if name != "" {
+            cred.name = name;
+        }
+        let category = rl.readline(match cred.category.as_ref() {
+            "" => "Category: ".to_owned(),
+            x => format!("Category [{}]: ", x)
+        }.as_ref()).unwrap();
+        if category != "" {
+            cred.category = category;
+        }
+    }
+    let username = rl.readline(match cred.username.as_ref() {
+        "" => "Username: ".to_owned(),
+        x => format!("Username [{}]: ", x)
+    }.as_ref()).unwrap();
+    if username != "" {
+        cred.username = username;
+    }
+    let password = rl.readline(match cred.password.as_ref() {
+        "" => "Password: ".to_owned(),
+        x => format!("Password [{}]: ", x)
+    }.as_ref()).unwrap();
+    if password != "" {
+        cred.password = password;
+    }
+}
+
+fn do_edit_credential(conn: &rusqlite::Connection, credential: &Credential) {
+    conn.execute("UPDATE credentials SET name=?1, category=?2, username=?3, password=?4 where id=?5",
+        &[&credential.name, &credential.category, &credential.username, &credential.password, &credential.id]).expect("Unable to edit credential.");
+}
+
+fn do_new_credential(conn: &rusqlite::Connection, cred: &Credential) {
+    conn.execute("INSERT INTO credentials
+        (name, category, username, password)
+        values
+        (?1, ?2, ?3, ?4)",
+        &[&cred.name, &cred.category, &cred.username, &cred.password]
+    ).unwrap();
+}
+
+fn do_delete_credential(conn: &rusqlite::Connection, cred: Credential) {
+    conn.execute("DELETE FROM  credentials WHERE id=?1", &[&cred.id]).expect("Unable to delete credential.");
+}
+
 fn delete_credential(conn: &rusqlite::Connection, name: String) {
-    let credential = get_credential(conn, name);
-    println!("Name: {}\nCategory: {}\nUsername: {}\n", credential.name, credential.category, credential.username);
+    let cred = get_credential(conn, name);
+    println!("Name: {}\nCategory: {}\nUsername: {}\n", cred.name, cred.category, cred.username);
 
     println!("Are you sure you wish to delete this credential?");
     let mut rl = Editor::<()>::new();
     match rl.readline(&format!("y/n [n]: ")) {
         Ok(v) => {
             if v == "y" {
-                conn.execute("DELETE FROM  credentials WHERE id=?1", &[&credential.id]).expect("Unable to delete credential.");
+                do_delete_credential(conn, cred);
                 println!("Credential deleted.");
             } else {
                 println!("Canceled.");
@@ -311,44 +343,80 @@ fn delete_credential(conn: &rusqlite::Connection, name: String) {
     };
 }
 
-fn generate_password(num_chars: usize, alpha: bool, num: bool, symbol: bool) {
-    // construct character set, default to all
-    let mut haystack = String::new();
-    let mut haystack_name = String::new();
-    let all = !alpha && !num && !symbol;
-    if alpha || all {
-        haystack += CHAR_ALPHA;
-        haystack_name += "alpha";
-    }
-    if num || all {
-        haystack += CHAR_NUM;
-        haystack_name += "numeric";
-    }
-    if symbol || all {
-        haystack += CHAR_SYMBOL;
-        haystack_name += "symbol";
-    }
-    let haystack_name = if all { String::new() } else { haystack_name + " " };
-
+fn generate_password(conn: &rusqlite::Connection, num_chars: usize, alpha: bool, num: bool, symbol: bool) {
     // default 32 characters
     let num_chars = match num_chars {
         0 => 32,
         x => x
     };
 
-    println!("Generating {}-character {}password:", num_chars, haystack_name);
+    let (charset, charset_name) = get_password_charset(alpha, num, symbol);
+    let charset_bytes = charset.as_bytes();
 
-    let mut rand = match OsRng::new() {
-        Ok(g) => g,
-        Err(e) => panic!("Failed to obtain OS RNG: {}", e)
-    };
+    println!("Generating {}-character {}password:", num_chars, charset_name);
+
+    let mut rand = OsRng::new().expect("Failed to obtain OS RNG");
     let mut pw = Vec::new();
     for _ in 1..num_chars {
-        pw.push(*rand.choose(haystack.as_bytes()).unwrap());
+        pw.push(*rand.choose(charset_bytes).unwrap());
     }
     let password = String::from_utf8(pw).unwrap();
 
-    println!("    {}", password);
+    println!("    {}\n", password);
+    copy_to_clipboard(password.to_owned());
+    println!("Password copied to clipboard.");
+
+    let answer = prompt("[A]dd new or [e]dit existing credential? ");
+    match answer.as_ref() {
+        "a" | "A" => {
+            let mut cred = Credential {
+                id: 0,
+                name: "".to_owned(),
+                category: "".to_owned(),
+                username: "".to_owned(),
+                password: password
+            };
+            modify_credential_data(&mut cred, false);
+            do_new_credential(conn, &cred);
+            println!("Saved.");
+        },
+        "e" | "E" => {
+            let name = prompt("Credential name to update: ");
+            let mut cred = get_credential(conn, name);
+            match prompt(&format!("Overwrite password for {}, ({})? y/n [n]: ", cred.name, cred.username)).as_ref() {
+                "y" | "Y" => {
+                    cred.password = password;
+                    do_edit_credential(conn, &cred);
+                    println!("Password updated for {}.", cred.name);
+                },
+                _ => println!("Canceled.")
+            }
+
+        }
+        _ => {
+            let _ = prompt("(press enter to clear clipboard)");
+        }
+    }
+}
+
+fn get_password_charset(alpha: bool, num: bool, symbol: bool) -> (String, String) {
+    let mut charset = String::new();
+    let mut charset_name = String::new();
+    let all = !alpha && !num && !symbol;
+    if alpha || all {
+        charset += CHAR_ALPHA;
+        charset_name += "alpha";
+    }
+    if num || all {
+        charset += CHAR_NUM;
+        charset_name += "numeric";
+    }
+    if symbol || all {
+        charset += CHAR_SYMBOL;
+        charset_name += "symbol";
+    }
+    let charset_name = if all { String::new() } else { charset_name + " " };
+    return (charset, charset_name);
 }
 
 fn initialize_datastore(data_path: &str) -> rusqlite::Connection {
@@ -376,6 +444,16 @@ fn name_exists(conn: &rusqlite::Connection, name: &str) -> bool {
         Ok(0) => return false,
         _ => return true
     }
+}
+
+fn copy_to_clipboard(message: String) {
+    let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+    ctx.set_contents(message).expect("Unable to write to clipboard.");
+}
+
+fn prompt(message: &str) -> String {
+    let mut rl = Editor::<()>::new();
+    rl.readline(message).unwrap()
 }
 
 fn pause(message: &str) {
