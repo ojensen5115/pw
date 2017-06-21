@@ -428,7 +428,13 @@ fn get_password_charset(alpha: bool, num: bool, symbol: bool) -> (String, String
 fn initialize_datastore(data_path: &str) -> rusqlite::Connection {
     let path = Path::new(data_path);
     let db_exists = path.is_file();
-    let conn = Connection::open(path).unwrap();
+    let conn = match Connection::open(path) {
+        Ok(c) => c,
+        _ => {
+            println!("Unable to open password store. Are you sure KBFS is mounted?");
+            ::std::process::exit(1)
+        }
+    };
     if !db_exists {
         conn.execute("CREATE TABLE credentials (
                       id              INTEGER PRIMARY KEY,
