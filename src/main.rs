@@ -292,9 +292,7 @@ fn modify_credential_data(cred: &mut Credential, skip_name_and_category: bool) {
             "" => "Category: ".to_owned(),
             x => format!("Category [{}]: ", x)
         }.as_ref()).unwrap();
-        if category != "" {
-            cred.category = category;
-        }
+        cred.category = category;
     }
     let username = rl.readline(match cred.username.as_ref() {
         "" => "Username: ".to_owned(),

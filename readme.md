@@ -188,6 +188,4 @@ This is roughly equivalent to having a `passwords.txt` file on your desktop: you
 
 ## Known Issues
 
-- Once a category on a credential is set, you can no longer set it back to the empty string:
-  when editing, leaving a field blank retains its old value.
 - Code style likely isn't very good -- comments and pointers much appreciated!
