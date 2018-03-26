@@ -269,6 +269,9 @@ fn copy_credential(conn: &rusqlite::Connection, name: String, username: bool) {
         println!("{} password copied to clipboard.", credential.name);
     }
     pause("(press enter to clear)");
+    // According to clipboard, clipboard contents should be cleared on program exit.
+    // This appears to fail on OSX High Sierra, so we explicitly overwrite it with the empty string.
+    copy_to_clipboard(String::new());
 }
 
 fn edit_credential(conn: &rusqlite::Connection, name: String) {
