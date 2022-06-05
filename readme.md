@@ -3,7 +3,15 @@
 `pw` is a command-line password manager written in Rust, using the Keybase Filesystem for storage.
 This means that in order to use it, you will need a Keybase account, and will need to have `/keybase` mounted on your filesystem.
 
+## Don't use this
+
+Do not use this, it is misguided. Yes, KBFS is encrypted and all that good stuff, and yes, KeyBase auth is pretty good, but remember that KBFS access is transparent (the whole reason this tool works). This program does not perform any application-level cryptography, which means that any other application on your device can trivially read all your passwords too.
+
+If you would not store your passwords in `passwords.txt` on your desktop, you shouldn't store them using this tool either.
+
 ## Usage
+
+If you are unperturbed by the above, and for some reason you're really hell-bent on using something that's basically just a vaguely more organized form of grepping `/home/user/passwords.txt`, then read on.
 
 ### `pw add [<category>] <name>`
 
